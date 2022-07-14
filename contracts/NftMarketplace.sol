@@ -48,7 +48,9 @@ contract NftMarketplace is ReentrancyGuard {
         uint256 indexed tokenId
     );
 
-    // Modifiers
+    /**
+     * Modifiers
+     */
     modifier notListed(address nftAddress, uint256 tokenId) {
         Listing memory listing = s_listings[nftAddress][tokenId];
         if (listing.price > 0) {
@@ -78,7 +80,9 @@ contract NftMarketplace is ReentrancyGuard {
         _;
     }
 
-    // Contract Functions
+    /**
+     * Getter functions
+     */
     /**
      * @notice Method for listing an NFT on the marketplace
      * @param nftAddress contract address of the NFT
@@ -151,5 +155,20 @@ contract NftMarketplace is ReentrancyGuard {
         if (!success) {
             revert NftMarketplace__TransferFailed();
         }
+    }
+
+    /**
+     * Getter functions
+     */
+    function getListing(address nftAddress, uint256 tokenId)
+        external
+        view
+        returns (Listing memory)
+    {
+        return s_listings[nftAddress][tokenId];
+    }
+
+    function getEarnings(address seller) external view returns (uint256) {
+        return s_earnings[seller];
     }
 }
