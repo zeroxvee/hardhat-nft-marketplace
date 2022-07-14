@@ -13,7 +13,7 @@ module.exports = async function () {
         waitConfirmations: network.config.blockConfirmations || 1,
     })
 
-    if (network.chainId == 31337 && process.env.ETHERSCAN_API_KEY) {
+    if (!network.chainId == 31337 && process.env.ETHERSCAN_API_KEY) {
         log("Verifying")
         await verify(nftMarketPlace.address, args)
     }
