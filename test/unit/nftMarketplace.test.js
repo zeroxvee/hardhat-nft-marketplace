@@ -69,4 +69,38 @@ const { network, ethers, deployments } = require("hardhat")
                   assert.equal(listing.seller, seller.address)
               })
           })
+
+          describe("Buy item", function () {
+              it("Reverts if the NFT is not listed", async () => {
+                  const tx = nftMarketPlaceBuyer.buyItem(basicNft.address, tokenId)
+                  await expect(tx).to.be.revertedWith("NftMarketplace__NotListed")
+              })
+
+              it("Reverts if the amount of ETH sent is lower than the listed for NFT", async () => {
+                  const listTx = await nftMarketPlace.listItem(basicNft.address, tokenId, price)
+                  await listTx.wait(1)
+
+                  price = 0
+                  const tx = nftMarketPlaceBuyer.buyItem(basicNft.address, tokenId, {
+                      value: price,
+                  })
+                  await expect(tx).to.be.revertedWith("NftMarketplace__PriceNotMet")
+              })
+
+              it("Updates the contract data, makes an nft transfer, emits an event", async () => {
+                  const listTx = await nftMarketPlace.listItem(basicNft.address, tokenId, price)
+                  await listTx.wait(1)
+
+                  const buyTx = nftMarketPlaceBuyer.buyItem(basicNft.address, tokenId, {
+                      value: price,
+                  })
+                  await expect(buyTx).to.emit(nftMarketPlace, "ItemSold")
+
+                  const sellerEarnings = await nftMarketPlace.getEarnings(seller.address)
+                  expect(sellerEarnings).to.be.above(0)
+
+                  const listing = await nftMarketPlace.getListing(basicNft.address, tokenId)
+                  expect(listing.price).to.equal(0)
+              })
+          })
       })
