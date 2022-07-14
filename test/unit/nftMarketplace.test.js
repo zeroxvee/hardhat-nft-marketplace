@@ -136,4 +136,42 @@ const { network, ethers, deployments } = require("hardhat")
                   assert.equal(listing.price, 0)
               })
           })
+
+          describe("Withdraw earnings", () => {
+              it("Reverts if no earnings to withdraw avaliable", async () => {
+                  const withdrawTx = nftMarketPlace.withdrawEarnings()
+                  await expect(withdrawTx).to.be.revertedWith(
+                      "NftMarketplace__NoEarningsToWithdraw"
+                  )
+              })
+
+              it("Sends ETH to the seller of the NFT, updates contract data", async () => {
+                  const listTx = await nftMarketPlace.listItem(basicNft.address, tokenId, price)
+                  await listTx.wait(1)
+
+                  // Seller balance after listing but before withdrawing
+                  const initialSellerBalance = await seller.getBalance()
+                  const buyTx = await nftMarketPlaceBuyer.buyItem(basicNft.address, tokenId, {
+                      value: price,
+                  })
+                  await buyTx.wait(1)
+
+                  // withdrawing ETH
+                  const withdrawTx = await nftMarketPlace.withdrawEarnings()
+                  const withdrawTxReceipt = await withdrawTx.wait(1)
+                  const {
+                      gasUsed: gasUsedWithdraw,
+                      effectiveGasPrice: effectiveGasPriceWithdraw,
+                  } = withdrawTxReceipt
+                  const withdrawGasCost = gasUsedWithdraw.mul(effectiveGasPriceWithdraw)
+
+                  // Seller balance after withdrawal
+                  const sellerBalance = await seller.getBalance()
+
+                  expect(await nftMarketPlace.getEarnings(seller.address)).to.equal(0)
+                  expect(sellerBalance.add(withdrawGasCost)).to.equal(
+                      initialSellerBalance.add(price)
+                  )
+              })
+          })
       })
