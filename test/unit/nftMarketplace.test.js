@@ -45,8 +45,8 @@ const { network, ethers, deployments } = require("hardhat")
 
               it("Reverts if the price is zero", async () => {
                   price = 0
-                  const tx = nftMarketPlaceBuyer.listItem(basicNft.address, TOKEN_ID, price)
-                  expect(tx).to.be.revertedWith("NftMarketplace__PriceMustBeAboveZero")
+                  const tx = nftMarketPlace.listItem(basicNft.address, TOKEN_ID, price)
+                  await expect(tx).to.be.revertedWith("NftMarketplace__PriceMustBeAboveZero")
               })
 
               it("Reverts if the marketplace wasn't approved for transfer", async () => {
