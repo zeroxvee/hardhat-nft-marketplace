@@ -121,4 +121,19 @@ const { network, ethers, deployments } = require("hardhat")
                   assert.equal(listing.price.toString(), price.toString())
               })
           })
+
+          describe("Cancel listing", function () {
+              it("Cancels the listing, emits an event", async () => {
+                  const listTx = await nftMarketPlace.listItem(basicNft.address, tokenId, price)
+                  await listTx.wait(1)
+
+                  const cancelTx = await nftMarketPlace.cancelItemListing(
+                      basicNft.address,
+                      tokenId
+                  )
+                  await expect(cancelTx).to.emit(nftMarketPlace, "ItemCanceled")
+                  const listing = await nftMarketPlace.getListing(basicNft.address, tokenId)
+                  assert.equal(listing.price, 0)
+              })
+          })
       })
