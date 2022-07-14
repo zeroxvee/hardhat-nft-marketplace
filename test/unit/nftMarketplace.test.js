@@ -103,4 +103,22 @@ const { network, ethers, deployments } = require("hardhat")
                   expect(listing.price).to.equal(0)
               })
           })
+
+          describe("Update listing", () => {
+              it("Updates listing with the new price, emits an event", async () => {
+                  const listTx = await nftMarketPlace.listItem(basicNft.address, tokenId, price)
+                  await listTx.wait(1)
+
+                  price = ethers.utils.parseEther("1")
+                  const updateTx = await nftMarketPlace.updateItemListing(
+                      basicNft.address,
+                      tokenId,
+                      price
+                  )
+                  await expect(updateTx).to.emit(nftMarketPlace, "ItemListed")
+
+                  const listing = await nftMarketPlace.getListing(basicNft.address, tokenId)
+                  assert.equal(listing.price.toString(), price.toString())
+              })
+          })
       })
