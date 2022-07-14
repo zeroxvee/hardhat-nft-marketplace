@@ -4,9 +4,12 @@ pragma solidity ^0.8.8;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+// Customr Errors
 error NftMarketplace__PriceMustBeAboveZero();
 error NftMarketplace__NotApprovedForMarketplace();
 error NftMarketplace__NotOwner();
+error NftMarketplace__TransferFailed();
+error NftMarketplace__NoEarningsToWithdraw();
 error NftMarketplace__AlreadyListed(address nftAdress, uint256 tokenId);
 error NftMarketplace__NotListed(address nftAdress, uint256 tokenId);
 error NftMarketplace__PriceNotMet(address nftAddress, uint256 tokenId, uint256 nftPrice);
@@ -23,6 +26,7 @@ contract NftMarketplace is ReentrancyGuard {
     // Seller address => Amount earned
     mapping(address => uint256) private s_earnings;
 
+    // Events
     event ItemListed(
         address indexed seller,
         address indexed nftAddress,
@@ -44,6 +48,7 @@ contract NftMarketplace is ReentrancyGuard {
         uint256 indexed tokenId
     );
 
+    // Modifiers
     modifier notListed(address nftAddress, uint256 tokenId) {
         Listing memory listing = s_listings[nftAddress][tokenId];
         if (listing.price > 0) {
@@ -73,8 +78,7 @@ contract NftMarketplace is ReentrancyGuard {
         _;
     }
 
-    constructor() {}
-
+    // Contract Functions
     /**
      * @notice Method for listing an NFT on the marketplace
      * @param nftAddress contract address of the NFT
@@ -135,5 +139,17 @@ contract NftMarketplace is ReentrancyGuard {
     ) external isListed(nftAddress, tokenId) isOwner(nftAddress, tokenId, msg.sender) {
         s_listings[nftAddress][tokenId].price = newPrice;
         emit ItemListed(msg.sender, nftAddress, tokenId, newPrice);
+    }
+
+    function withdrawEarnings() external {
+        uint256 earnings = s_earnings[msg.sender];
+        if (earnings <= 0) {
+            revert NftMarketplace__NoEarningsToWithdraw();
+        }
+        s_earnings[msg.sender] = 0;
+        (bool success, ) = payable(msg.sender).call{value: earnings}("");
+        if (!success) {
+            revert NftMarketplace__TransferFailed();
+        }
     }
 }
